@@ -1,0 +1,16 @@
+{
+  "summary_model": "gpt-4-turbo",
+  "review_model": "gpt-4-turbo",
+  "standards": [
+    "Ensure proper error handling is implemented",
+    "Follow the DRY (Don't Repeat Yourself) principle",
+    "Use meaningful variable and function names",
+    "Keep functions small and focused on a single task",
+    "Write clear and concise comments",
+    "Avoid hardcoded values, use constants instead",
+    "Ensure proper indentation and consistent code style",
+    "Write unit tests for new functionality",
+    "Avoid unnecessary complexity",
+    "Use appropriate design patterns when applicable"
+  ]
+}
