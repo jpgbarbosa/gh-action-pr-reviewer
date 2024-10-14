@@ -2,30 +2,31 @@ import unittest
 from unittest.mock import patch, MagicMock
 import sys
 import os
+import logging
 
 # Add the parent directory to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from ai_pr_review import load_config, load_prompts, get_pr_number, validate_model, ai_request
+from scripts.ai_pr_review import load_config, load_prompts, get_pr_number, validate_model, ai_request
 
 class TestAIPRReview(unittest.TestCase):
 
-    @patch('builtins.open', new_callable=unittest.mock.mock_open, read_data='{"test": "data"}')
+    @patch('scripts.ai_pr_review.open', new_callable=unittest.mock.mock_open, read_data='{"test": "data"}')
     def test_load_config(self, mock_open):
         config = load_config()
         self.assertEqual(config, {"test": "data"})
 
-    @patch('builtins.open', new_callable=unittest.mock.mock_open, read_data='{"system_role": "test role"}')
+    @patch('scripts.ai_pr_review.open', new_callable=unittest.mock.mock_open, read_data='{"system_role": "test role"}')
     def test_load_prompts(self, mock_open):
         prompts = load_prompts()
         self.assertEqual(prompts["system_role"], "test role")
 
-    @patch.dict(os.environ, {"GITHUB_EVENT_PULL_REQUEST_NUMBER": "123"})
+    @patch.dict('os.environ', {"GITHUB_EVENT_PULL_REQUEST_NUMBER": "123"})
     def test_get_pr_number_from_env(self):
         pr_number = get_pr_number()
         self.assertEqual(pr_number, 123)
 
-    @patch.dict(os.environ, {"GITHUB_REF": "refs/pull/456/merge"})
+    @patch.dict('os.environ', {"GITHUB_REF": "refs/pull/456/merge"})
     def test_get_pr_number_from_ref(self):
         pr_number = get_pr_number()
         self.assertEqual(pr_number, 456)
@@ -40,7 +41,8 @@ class TestAIPRReview(unittest.TestCase):
         self.assertEqual(model, "unknown-model")
         self.assertIn("WARNING:root:Model 'unknown-model' is not in the list of known models. Using anyway.", cm.output)
 
-    @patch('openai.OpenAI')
+    @patch('scripts.ai_pr_review.OpenAI')
+    @patch.dict('os.environ', {"OPENAI_API_KEY": "test_key"})
     def test_ai_request(self, mock_openai):
         mock_client = MagicMock()
         mock_openai.return_value = mock_client
@@ -50,4 +52,5 @@ class TestAIPRReview(unittest.TestCase):
         self.assertEqual(response, "Test response")
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.WARNING)
     unittest.main()

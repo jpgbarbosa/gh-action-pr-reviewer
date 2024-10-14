@@ -3,6 +3,8 @@ import sys
 import json
 from openai import OpenAI
 from github import Github, GithubException
+import requests
+import logging
 
 def load_config():
     try:
@@ -37,8 +39,14 @@ def load_prompts():
 def get_pr_diff(repo, pr_number):
     try:
         pr = repo.get_pull(pr_number)
-        return pr.get_files()
-    except GithubException as e:
+        headers = {
+            'Authorization': f'token {os.getenv("GITHUB_TOKEN")}',
+            'Accept': 'application/vnd.github.v3.patch'
+        }
+        response = requests.get(pr.url, headers=headers)
+        response.raise_for_status()
+        return response.text
+    except (GithubException, requests.RequestException) as e:
         print(f"Error fetching PR diff: {str(e)}")
         sys.exit(1)
 
@@ -101,7 +109,7 @@ def get_available_models():
 def validate_model(model):
     available_models = get_available_models()
     if model not in available_models:
-        print(f"Warning: Model '{model}' is not in the list of known models. Using anyway.")
+        logging.warning(f"Model '{model}' is not in the list of known models. Using anyway.")
     return model
 
 def main():
@@ -126,14 +134,7 @@ def main():
         sys.exit(1)
 
     config = load_config()
-    files = get_pr_diff(repo, pr_number)
-
-    diff = ""
-    for file in files:
-        diff += f"File: {file.filename}\n"
-        diff += f"Status: {file.status}\n"
-        diff += f"Changes: +{file.additions} -{file.deletions}\n"
-        diff += f"Patch:\n{file.patch}\n\n"
+    diff = get_pr_diff(repo, pr_number)
 
     summary_model = validate_model(config.get('summary_model', 'gpt-4-turbo'))
     review_model = validate_model(config.get('review_model', 'gpt-4-turbo'))
