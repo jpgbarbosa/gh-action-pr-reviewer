@@ -142,7 +142,19 @@ def main():
     summary = summarize_changes(diff, summary_model)
     review = review_code(diff, config['standards'], review_model)
 
-    comment = f"## AI Pull Request Review\n\n### Summary of Changes (using {summary_model})\n{summary}\n\n### Code Review (using {review_model})\n{review}"
+    # Determine the status based on the review content
+    status = ":green_circle:" if "Must-Have Changes:" not in review else (":yellow_circle:" if "Nice-to-Have Suggestions:" in review else ":red_circle:")
+
+    comment = f"""## AI Pull Request Review
+
+{status} Quick Summary: {get_quick_summary(status)}
+
+### Summary of Changes (using {summary_model})
+{summary}
+
+### Code Review (using {review_model})
+{review}
+"""
 
     try:
         pr = repo.get_pull(pr_number)
@@ -150,6 +162,15 @@ def main():
     except GithubException as e:
         print(f"Error creating PR comment: {str(e)}")
         sys.exit(1)
+
+def get_quick_summary(status):
+    if status == ":green_circle:":
+        return "Good to merge"
+    elif status == ":yellow_circle:":
+        return "Has nice-to-have suggestions"
+    else:
+        return "Has critical changes needed"
+
 
 if __name__ == "__main__":
     main()
